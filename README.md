@@ -68,7 +68,7 @@
   - **Response body:** 'Новый пользователь [имя пользователя] создан.'
   - **Response:** HTTP 200 OK
 
-### File Operations
+### Операции с файлами
 
 - **GET /list**
     - **Description:** Получение списка файлов для текущего пользователя.
@@ -109,12 +109,12 @@
 
 ## Установка и запуск
 
-1. **Clone the repository:**
+1. **Скопируйте репозиторий:**
 ```sh
    git clone https://github.com/your-repository-url.git
    cd your-repository-folder
 ```
-2. **Configure Postgres:**
+2. **Конфигурация Postgres:**
     * Установите Postgres или запустите докер-контейнер.  
       Пропишите настройки в application.properties
     * spring.datasource.url=jdbc:postgresql://localhost:5432/storagedb 
@@ -122,7 +122,7 @@
     * spring.datasource.password=postgres 
     * spring.datasource.driver-class-name=org.postgresql.Driver
    
-3. **Configure Minio**
+3. **Конфигурация Minio**
     * Запустите докер-контейнер Minio на портах 9000:9000  
       Пропишите настройки в application.properties
     * minio.endpoint=http://localhost:9000
@@ -131,11 +131,11 @@
     * minio.bucket-name=storagebucket 
     * minio.region=us-east-1
    
-4. **Build the project:**
+4. **Сборка проекта:**
 ```sh
    mvn clean install
 ```
-5. **Run the application:**
+5. **Запуск:**
 ```sh
    mvn spring-boot:run
 ```

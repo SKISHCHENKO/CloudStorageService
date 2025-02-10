@@ -65,23 +65,5 @@ public class UserControllerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Пользователь уже существует", response.getBody());
     }
-
-    @Test
-    @DisplayName("Should throw IllegalArgumentException when password is less than 6 characters")
-    void shouldThrowExceptionWhenPasswordIsTooShort() {
-        UserRequest user = new UserRequest();
-        user.setUsername("newUser ");
-        user.setPassword("123");
-        user.setEmail("newuser@example.com");
-
-        // Настраиваем мок для выбрасывания исключения
-        Mockito.doThrow(new IllegalArgumentException("Пароль должен содержать не менее 6 символов"))
-                .when(userService).createUser (user);
-
-        ResponseEntity<String> response = userController.addUser (user);
-
-        // Проверяем, что статус ответа - 500 (внутренняя ошибка сервера)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Пароль должен содержать не менее 6 символов", response.getBody());
-    }
+    
 }

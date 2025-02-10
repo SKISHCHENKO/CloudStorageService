@@ -39,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("auth-token");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);  // Убираем "Bearer "
+            token = authHeader.substring(7);
         } else {
             token = authHeader;
         }
@@ -54,10 +54,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                System.out.println("✅ Authentication set for user: " + userDetails.getUsername());
+                System.out.println("✅ Authentication for user: " + userDetails.getUsername());
             }
         } else {
-            System.out.println("❌ Token is invalid or missing.");
             if (token == null) {
                 System.out.println("❌ Token is missing.");
             } else if (!jwtUtil.validateToken(token)) {

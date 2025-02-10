@@ -55,7 +55,7 @@ public class FileService {
             String filename = file.getOriginalFilename();
             Optional<File> existingFile = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername());
             if (existingFile.isPresent()) {
-                System.out.println("\u26A0\uFE0F Файл с именем " + filename + " уже существует. Заменяем...");
+                System.out.println("⚠️ Файл с именем " + filename + " уже существует. Заменяем...");
                 patchFile(filename, username, file);
                 return;
             }
@@ -76,7 +76,7 @@ public class FileService {
     }
 
     public void patchFile(String filename, String username, MultipartFile newFile) {
-        System.out.println("\u26A0\uFE0F Заменяем файл: " + filename + " для пользователя: " + username);
+        System.out.println("⚠️Заменяем файл: " + filename + " для пользователя: " + username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь: " + username +" не найден."));

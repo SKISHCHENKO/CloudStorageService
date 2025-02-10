@@ -88,13 +88,6 @@
             <version>3.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.modelmapper</groupId>
-            <artifactId>modelmapper</artifactId>
-            <version>2.3.9</version>
-        </dependency>
-
-
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.5</version>
@@ -148,11 +141,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>2.0.7</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.4.7</version>
         </dependency>
 
     </dependencies>

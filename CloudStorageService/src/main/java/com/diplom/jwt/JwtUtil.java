@@ -35,12 +35,17 @@ public class JwtUtil {
     }
     // Получение имени пользователя из токена
     public String getEmail(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();  // Получаем email
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();  // Получаем email
+        } catch (JwtException e) {
+            System.out.println("Ошибка при извлечении email из токена");
+            throw new IllegalArgumentException("Invalid token structure", e);
+        }
     }
 
     // Получение роли из токена
@@ -70,15 +75,11 @@ public class JwtUtil {
         }
     }
 
-    public String resolveToken(HttpServletRequest request){
-        // Получение токена из заголовка Authorization
+    public String resolveToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
-        String token = null;
-
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            // Убираем префикс "Bearer " для получения чистого токена
-            token = authorizationHeader.substring(7);
+            return authorizationHeader.substring(7); // Убираем префикс "Bearer "
         }
-        return token;
+        return null;
     }
 }

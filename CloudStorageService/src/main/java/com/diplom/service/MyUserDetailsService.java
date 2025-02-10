@@ -16,6 +16,6 @@ public class MyUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UserNotFoundException {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("Пользователь с email: " + email + " не найден"));
     }
 }

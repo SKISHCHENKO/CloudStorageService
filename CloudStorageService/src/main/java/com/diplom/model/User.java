@@ -48,14 +48,8 @@ public class User implements UserDetails {
     private String email;
 
     @Transient
-    List<Long> uploadedFiles; // файлы пользователя - список id файлов
+    List<Long> uploadedFiles;
 
-    public void addFileToUsersUploadedFiles(Long id) {
-        if (uploadedFiles == null) {
-            uploadedFiles = new ArrayList<>();
-        }
-        this.uploadedFiles.add(id);
-    }
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Преобразуем роль в объект GrantedAuthority

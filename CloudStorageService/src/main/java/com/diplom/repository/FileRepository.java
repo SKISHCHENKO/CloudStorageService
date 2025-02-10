@@ -15,7 +15,6 @@ public interface FileRepository extends JpaRepository<File, Long> {
     // Метод для поиска файла по имени и имени пользователя
     Optional<File> findByFilenameAndOwner_Username(String filename, String username);
 
-    // Найти файлы пользователя с пагинацией
     Page<File> findByOwner_Username(String username, Pageable pageable);
 
     Page<File> findByOwner_Id(Long userId, Pageable pageable);

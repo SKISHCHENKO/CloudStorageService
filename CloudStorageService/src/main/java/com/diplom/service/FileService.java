@@ -79,10 +79,10 @@ public class FileService {
         System.out.println("\u26A0\uFE0F Заменяем файл: " + filename + " для пользователя: " + username);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь: " + username +" не найден."));
 
         File oldFile = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername())
-                .orElseThrow(() -> new FilesNotFoundException("Файл не найден: " + filename));
+                .orElseThrow(() -> new FilesNotFoundException("Файл: " + filename + " не найден."));
 
         try {
             // Удаление старого файла из MinIO
@@ -113,14 +113,17 @@ public class FileService {
     public void deleteFile(String username, String filename) {
         try {
             // Удаляем файл из MinIO
-            minioService.deleteFile(filename);
+            boolean deleted = minioService.deleteFile(filename);
+            if (!deleted) {
+                throw new GeneralServiceException("Не удалось удалить файл из MinIO: " + filename);
+            }
 
             // Удаляем запись из таблицы File
             Optional<File> fileRecordOptional = fileRepository.findByFilenameAndOwner_Username(filename, username);
             fileRecordOptional.ifPresentOrElse(
                     fileRecord -> fileRepository.delete(fileRecord),
                     () -> {
-                        throw new RuntimeException("Файл с именем '" + filename + "' не найден для пользователя '" + username + "'.");
+                        throw new RuntimeException("Файл с именем " + filename + " не найден для пользователя " + username + " .");
                     }
             );
         } catch (Exception e) {
@@ -131,24 +134,18 @@ public class FileService {
 
     public List<FileDTO> listFiles(String username, int limit) {
         if (limit <= 0) {
-            throw new InvalidInputException("Limit must be greater than 0");
+            throw new InvalidInputException("Лимит для списка файлов должен быть > 0");
         }
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь: " + username +" не найден."));
 
 
         try {
-            Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "dateOfUpload"));
+            Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "id"));
 
             Page<File> filePage = fileRepository.findByOwner_Id(user.getId(), pageable);
             List<File> files = filePage.getContent();
 
-            if (files.isEmpty()) {
-                System.out.println("⚠️ Файлы не найдены для пользователя: " + username);
-                throw new FilesNotFoundException("Нет файлов для пользователя: " + username);
-            }
-
-            System.out.println();
             return files.stream()
                     .map(file -> {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -159,7 +156,7 @@ public class FileService {
         } catch (InvalidInputException | FilesNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            throw new GeneralServiceException("Error getting file list for user with ID: " + user.getId(), e);
+            throw new GeneralServiceException("Ошибка в получение списка файлов для пользователя " + user.getUsername(), e);
         }
     }
 
@@ -173,7 +170,7 @@ public class FileService {
 
             File file = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername() )
                     .orElseThrow(() -> new FilesNotFoundException(
-                            "File not found for user: " + user.getId() + " with filename: " + filename)
+                            "Файл с именем " + filename + " не найден для пользователя " + username + " .")
                     );
 
             // Проверяем, существует ли файл с таким именем

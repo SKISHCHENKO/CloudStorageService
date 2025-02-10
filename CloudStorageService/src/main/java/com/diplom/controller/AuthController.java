@@ -28,6 +28,10 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+
+    /**
+    *  Авторизация по почте и паролю
+     */
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) {
         Optional<User> optionalUser = userRepository.findByEmail(authenticationRequest.getLogin());
@@ -55,7 +59,9 @@ public class AuthController {
            }
 
         }
-
+    /**
+     *  Сброс авторизации и выход
+     */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader(value = "auth-token", required = true) String authToken) {
         SecurityContextHolder.clearContext();

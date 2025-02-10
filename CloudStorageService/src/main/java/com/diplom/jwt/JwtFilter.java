@@ -1,7 +1,5 @@
 package com.diplom.jwt;
 
-
-
 import com.diplom.service.MyUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,7 +26,16 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = null;
+        String requestPath = request.getRequestURI();
+
+        // Пропускаем без проверки токена
+        if (requestPath.startsWith("/users")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+
+        String token;
         String authHeader = request.getHeader("auth-token");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -36,13 +43,6 @@ public class JwtFilter extends OncePerRequestFilter {
         } else {
             token = authHeader;
         }
-
-        if (token != null) {
-            System.out.println("Extracted Token: " + token);
-        } else {
-            System.out.println("No token found!");
-        }
-
 
         if (token != null && jwtUtil.validateToken(token)) {
             String email = jwtUtil.getEmail(token);
@@ -58,6 +58,14 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         } else {
             System.out.println("❌ Token is invalid or missing.");
+            if (token == null) {
+                System.out.println("❌ Token is missing.");
+            } else if (!jwtUtil.validateToken(token)) {
+                System.out.println("❌ Token is invalid.");
+            } else {
+                System.out.println("Error!");
+            }
+
         }
 
         filterChain.doFilter(request, response);

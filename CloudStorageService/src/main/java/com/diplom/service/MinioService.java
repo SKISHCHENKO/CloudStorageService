@@ -45,7 +45,7 @@ public class MinioService {
             log.error("Error while creating MinIO bucket: {}", e.getMessage(), e);
         }
     }
-    public void deleteFile(String filename) {
+    public boolean deleteFile(String filename) {
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -54,8 +54,10 @@ public class MinioService {
                             .build()
             );
             System.out.println("✅ Файл удален из MinIO: " + filename);
+            return true;
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка при удалении файла из MinIO: " + filename, e);
+            System.err.println("Ошибка при удалении файла из MinIO: " + filename);
+            return false;
         }
     }
 

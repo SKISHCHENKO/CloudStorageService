@@ -2,7 +2,6 @@ package com.diplom.controller;
 
 import com.diplom.model.User;
 import com.diplom.request.UserRequest;
-import com.diplom.request.UserUpdateRequest;
 import com.diplom.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +20,12 @@ public class UserController {
     public ResponseEntity<String> addUser(@RequestBody UserRequest userRequest) {
         try {
             User newUser = userService.createUser(userRequest);
-            return ResponseEntity.ok("New user created and saved");
+            return ResponseEntity.ok("Новый пользователь "+ newUser.getUsername()+ " создан.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
     // Получение информации о текущем пользователе
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUser(Authentication auth) {
@@ -35,25 +35,25 @@ public class UserController {
 
     // Редактирование профиля
     @PatchMapping("/me")
-    public ResponseEntity<String> updateUserProfile(Authentication auth, @RequestBody UserUpdateRequest userUpdateRequest) {
+    public ResponseEntity<String> updateUserProfile(Authentication auth, @RequestBody UserRequest userRequest) {
         try {
             User user = userService.findByUsername(auth.getName());
-            userService.updateUserProfile(user.getId(), userUpdateRequest);
-            return ResponseEntity.ok("Profile updated successfully");
+            userService.updateUserProfile(user.getId(), userRequest);
+            return ResponseEntity.ok("Профиль успешно обновлен.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при обновление профиля: " + e.getMessage());
         }
     }
 
-    // Удаление профиля
+    // Удаление пользователя
     @DeleteMapping("/me")
-    public ResponseEntity<String> deleteUserProfile(Authentication auth) {
+    public ResponseEntity<String> deleteUser(Authentication auth) {
         try {
             User user = userService.findByUsername(auth.getName());
             userService.deleteUser(user.getId());
-            return ResponseEntity.ok("Profile deleted successfully");
+            return ResponseEntity.ok("Пользователь усшпешно удален.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete profile: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при удаление пользователя: " + e.getMessage());
         }
     }
 }

@@ -24,6 +24,9 @@ public class FileController {
 
     private final FileService fileService;
 
+    /**
+     *  Загрузка файла
+     */
     @PostMapping("/file")
     public ResponseEntity<Void> uploadFile(
             @RequestHeader(value = "auth-token", required = true) String authToken,
@@ -35,6 +38,9 @@ public class FileController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    /**
+     *  Получение списка файлов у авторизованного пользователя
+     */
     @GetMapping("/list")
     public ResponseEntity<List<FileDTO>> listFiles(
             @RequestHeader(value = "auth-token", required = true) String authToken,
@@ -46,17 +52,23 @@ public class FileController {
         return new ResponseEntity<>(files, HttpStatus.OK);
     }
 
+    /**
+     *  Удаление файла
+     */
     @DeleteMapping("/file")
     public ResponseEntity<Void> deleteFile(
             @RequestHeader(value = "auth-token", required = true) String authToken,
             @RequestParam("filename") String filename) {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("🔍 Полученный username: " + username);
 
         fileService.deleteFile(username, filename);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    /**
+     *  Редактирование имени файла - на фронтенде - новое имя файла задается случайным образом
+     */
     @PutMapping("/file")
     public ResponseEntity<?> editFileName(
             @RequestHeader(value = "auth-token", required = true) String authToken,
@@ -65,7 +77,7 @@ public class FileController {
 
         if (requestBody == null || !requestBody.containsKey("filename")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("INVALID_INPUT", 400));
+                    .body(new ErrorResponse("Неправильный запрос на изменение имени файла", 400));
         }
 
         String newFileName = requestBody.get("filename");
@@ -75,7 +87,9 @@ public class FileController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-
+    /**
+     *  Загрузка файла
+     */
     @GetMapping("/file")
     public ResponseEntity<byte[]> downloadFile(
             @RequestHeader(value = "auth-token", required = true) String authToken,

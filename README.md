@@ -170,3 +170,11 @@
 ```sh
    docker-compose up --build
 ```
+## Тесты ##
+1. Интеграционный тест AuthController c PostgreSQLContainer
+2. Интеграционный тест FileController с PostgreSQLContainer
+3. Junit тест AuthController с использованием Mockito
+4. Junit тест FileController с использованием Mockito
+5. Junit тест UserController с использованием Mockito
+6. Junit тест FileService с использованием Mockito
+7. Junit тест UserService с использованием Mockito

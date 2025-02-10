@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +30,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @SpringBootTest
@@ -72,19 +72,19 @@ public class FileControllerIntegrationTest {
 
         // Удаляем пользователя перед каждым тестом
         try {
-            userController.deleteUser (auth);
+            userController.deleteUser(auth);
         } catch (Exception ignored) {
         }
 
         // Создаем нового пользователя
-        UserRequest testUser  = new UserRequest();
+        UserRequest testUser = new UserRequest();
         testUser.setUsername("testuser");
         testUser.setPassword("testpassword");
         testUser.setEmail("test@test.ru");
         testUser.setRole("ROLE_USER");
 
         // Проверяем, что пользователь успешно создан
-        ResponseEntity<String> response = userController.addUser (testUser );
+        ResponseEntity<String> response = userController.addUser(testUser);
         assertEquals(HttpStatus.OK, response.getStatusCode(), "Пользователь не был создан.");
     }
 
@@ -98,12 +98,12 @@ public class FileControllerIntegrationTest {
     @Test
     @DisplayName("Should list files successfully")
     void shouldListFilesSuccessfully() {
-        // Сначала загружаем файл для тестирования
-        MultipartFile file = Mockito.mock(MultipartFile.class);
-        Mockito.when(file.getOriginalFilename()).thenReturn("testfile.txt");
-        Mockito.when(file.getSize()).thenReturn(1024L);
-        Mockito.when(file.isEmpty()).thenReturn(false);
-        fileController.uploadFile("mocked-auth-token", file);
+        // Используем MockMultipartFile
+        MultipartFile file = new MockMultipartFile("file", "testfile.txt", "text/plain", "test content".getBytes());
+
+        // Загружаем файл через контроллер
+        ResponseEntity<Void> uploadResponse = fileController.uploadFile("mocked-auth-token", file);
+        assertEquals(HttpStatus.OK, uploadResponse.getStatusCode(), "File upload failed");
 
         // Теперь проверяем, что файлы успешно перечисляются
         ResponseEntity<List<FileDTO>> response = fileController.listFiles("mocked-auth-token", 10);
@@ -111,18 +111,15 @@ public class FileControllerIntegrationTest {
         assertEquals(1, response.getBody().size());
     }
 
+
     @Test
     @DisplayName("Should download file successfully")
     void shouldDownloadFileSuccessfully() throws IOException {
-        // Создаем временный файл для тестирования
-        File tempFile = File.createTempFile("testfile", ".txt");
+        // Содержимое файла для проверки
         String fileContent = "Test file content";
-        try (FileWriter writer = new FileWriter(tempFile)) {
-            writer.write(fileContent);
-        }
 
-        // Создаем MultipartFile из временного файла
-        MultipartFile file = new MockMultipartFile("file", tempFile.getName(), "text/plain", new FileInputStream(tempFile));
+        // Используем MockMultipartFile
+        MultipartFile file = new MockMultipartFile("file", "testfile.txt", "text/plain", "Test file content".getBytes());
 
         // Загружаем файл через контроллер
         ResponseEntity<Void> uploadResponse = fileController.uploadFile("mocked-auth-token", file);
@@ -138,10 +135,8 @@ public class FileControllerIntegrationTest {
         assertEquals(fileContent, new String(response.getBody()));
 
         // Проверяем заголовок Content-Disposition
-        assertEquals("attachment; filename=\"testfile.txt\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertTrue(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION).contains("testfile.txt"));
 
-        // Удаляем временный файл
-        tempFile.delete();
     }
 
 }

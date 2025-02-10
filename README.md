@@ -101,7 +101,7 @@
       }
       ```
 
-- **DELETE /cloud/file**
+- **DELETE /file**
     - **Description:** Удаление файла.
     - **Headers:** `Authorization: Bearer <token>`
     - **Query Parameters:** `filename=string`

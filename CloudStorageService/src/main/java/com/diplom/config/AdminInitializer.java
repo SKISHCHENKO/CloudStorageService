@@ -4,11 +4,13 @@ import com.diplom.model.Role;
 import com.diplom.model.User;
 import com.diplom.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class AdminInitializer {
@@ -27,10 +29,10 @@ public class AdminInitializer {
                         .role(Role.ROLE_ADMIN)
                         .build();
                 userRepository.save(admin);
-                System.out.println("Admin user created!");
+                log.info("Admin user created!");
             }
             else{
-                System.out.println("Admin user already exists!");
+                log.info("Admin user already exists!");
             }
         };
     }

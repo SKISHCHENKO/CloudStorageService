@@ -36,4 +36,11 @@ public class File {
     @CreationTimestamp
     @Column(name = "date_of_upload", nullable = false)
     LocalDateTime dateOfUpload; // время и дата загрузки файла
+
+    public File(String filename, long size, LocalDateTime dateOfUpload) {
+        this.filename = filename;
+        this.size = size;
+        this.dateOfUpload = dateOfUpload;
+    }
+
 }

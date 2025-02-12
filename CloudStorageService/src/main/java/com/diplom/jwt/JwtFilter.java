@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @AllArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -54,19 +56,17 @@ public class JwtFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                System.out.println("✅ Authentication for user: " + userDetails.getUsername());
+                log.info("✅ Authentication for user: {}", userDetails.getUsername());
             }
         } else {
             if (token == null) {
-                System.out.println("❌ Token is missing.");
+                log.error("❌ Token is missing.");
             } else if (!jwtUtil.validateToken(token)) {
-                System.out.println("❌ Token is invalid.");
+                log.error("❌ Token is invalid.");
             } else {
                 System.out.println("Error!");
             }
-
         }
-
         filterChain.doFilter(request, response);
     }
 }

@@ -2,33 +2,28 @@ package com.diplom.service;
 
 import com.diplom.exception.UserNotFoundException;
 import com.diplom.model.User;
-import com.diplom.model.dto.UserDTO;
 import com.diplom.repository.UserRepository;
 import com.diplom.request.UserRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.diplom.model.Role;
-
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    private UserDTO convertToUserDto(User user) {
-        return new UserDTO(user.getUsername(), user.getEmail());
-    }
+
 
     public User save(User user) {
         return repository.save(user);
-    }
-
-    public UserDTO getUser(Long id) {
-        return convertToUserDto(findById(id));
     }
 
     public User findById(Long id) {
@@ -47,8 +42,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUserProfile(Long id, UserRequest userRequest) {
-        User user = findById(id);
+    public User updateUserProfile(User user, UserRequest userRequest) {
         user.setUsername(userRequest.getUsername());
         user.setPassword(userRequest.getPassword());
         user.setEmail(userRequest.getEmail());
@@ -58,9 +52,11 @@ public class UserService {
     @Transactional
     public User createUser(UserRequest request) {
         if (repository.findByUsername(request.getUsername()).isPresent()) {
+            log.error("Пользователь уже существует");
             throw new IllegalArgumentException("Пользователь уже существует");
         }
         if (repository.findByEmail(request.getEmail()).isPresent()) {
+            log.error("Пользователь уже существует");
             throw new IllegalArgumentException("Пользователь уже существует");
         }
 
@@ -80,6 +76,7 @@ public class UserService {
         if (user.isPresent()) {
             repository.deleteById(userId);
         } else {
+            log.error("Пользователь не найден");
             throw new IllegalArgumentException("Пользователь не найден");
         }
     }

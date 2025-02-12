@@ -13,8 +13,4 @@ public class FileDTO {
     private int size;
     private String editedAt;
 
-    public static FileDTO fromEntity(File file) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return new FileDTO(file.getFilename(), (int) file.getSize(), file.getDateOfUpload().format(formatter));
-    }
 }

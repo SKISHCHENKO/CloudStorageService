@@ -5,81 +5,94 @@ import com.diplom.exception.GeneralServiceException;
 import com.diplom.exception.InvalidInputException;
 import com.diplom.model.File;
 import com.diplom.model.User;
-import com.diplom.model.dto.FileDTO;
 import com.diplom.repository.FileRepository;
-import com.diplom.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
-import java.time.format.DateTimeFormatter;
 
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class FileService {
 
 
     private int pageNumber = 0;
     private final FileRepository fileRepository;
-    private final UserRepository userRepository;
     private final String bucketName;
     private final MinioService minioService;
 
     @Autowired
-    public FileService(FileRepository fileRepository,UserRepository userRepository,
-                       @Value("${minio.bucket-name}") String bucketName, MinioService minioService) {
+    public FileService(FileRepository fileRepository,@Value("${minio.bucket-name}") String bucketName,
+                       MinioService minioService) {
         this.fileRepository = fileRepository;
-        this.userRepository = userRepository;
         this.bucketName = bucketName;
         this.minioService = minioService;
     }
 
-    public void uploadFile(String username, MultipartFile file) {
-        System.out.println("\u26A0\uFE0F Загружается файл: " + file.getOriginalFilename() + " для пользователя: " + username);
-        try {
+    /**
+     *  Загрузка файла в файловое хранилище
+     */
+    @Transactional
+    public void uploadFile(User user, MultipartFile file) {
+        log.info("⚠\uFE0F Загружается файл: {} для пользователя: {}", file.getOriginalFilename(), user.getUsername());
+        String filename = file.getOriginalFilename();
 
+        try {
             if (file.isEmpty()) {
+                log.error("Файл {} пустой!", filename);
                 throw new InvalidInputException("Файл пустой!");
             }
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-            String filename = file.getOriginalFilename();
             Optional<File> existingFile = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername());
             if (existingFile.isPresent()) {
-                System.out.println("⚠️ Файл с именем " + filename + " уже существует. Заменяем...");
-                patchFile(filename, username, file);
+                log.warn("⚠\uFE0F Файл с именем {} уже существует. Заменяем...", filename);
+                patchFile(filename, user, file);
                 return;
             }
 
-            minioService.saveFile(file);
+            // Сохраняем файл в MinIO
+            boolean saveFile = minioService.saveFile(file);
 
-            // Создаем запись в таблице File
-            File fileRecord = File.builder()
-                    .filename(filename)
-                    .owner(user)
-                    .filePath(bucketName + "/" + filename)
-                    .size(file.getSize())
-                    .build();
-            fileRepository.save(fileRecord);
+            if(saveFile) {
+                // Создаем запись в таблице File
+                File fileRecord = File.builder()
+                        .filename(filename)
+                        .owner(user)
+                        .filePath(bucketName + "/" + filename)
+                        .size(file.getSize())
+                        .build();
+                // Сохраняем запись в базе данных
+                fileRepository.save(fileRecord);
+            }
+
         } catch (Exception e) {
+            // Если произошла ошибка после сохранения в MinIO, необходимо удалить файл из MinIO
+            if (minioService.fileExists(filename)) {
+                try {
+                    minioService.deleteFile(filename);
+                    log.info("Файл {} был удален из MinIO из-за ошибки при загрузке.", filename);
+                } catch (Exception deleteException) {
+                    log.error("Не удалось удалить файл {} из MinIO после ошибки: {}", filename, deleteException.getMessage());
+                }
+            }
+            log.error("Ошибка при загрузке файла {}: {}", filename, e.getMessage());
             throw new RuntimeException("Ошибка при загрузке файла: " + e.getMessage(), e);
         }
     }
 
-    public void patchFile(String filename, String username, MultipartFile newFile) {
-        System.out.println("⚠️Заменяем файл: " + filename + " для пользователя: " + username);
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь: " + username +" не найден."));
+    @Transactional
+    public void patchFile(String filename, User user, MultipartFile newFile) {
+        log.info("⚠\uFE0FЗаменяем файл: {} для пользователя: {}", filename, user.getUsername());
 
         File oldFile = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername())
                 .orElseThrow(() -> new FilesNotFoundException("Файл: " + filename + " не найден."));
@@ -105,40 +118,49 @@ public class FileService {
             fileRepository.save(updatedFile);
 
         } catch (Exception e) {
+            log.error("Ошибка при замене файла {}" , filename);
             throw new GeneralServiceException("Ошибка при замене файла: " + filename, e);
         }
     }
 
+    @Transactional
+    public void deleteFile(User user, String filename) {
+        // Находим запись файла в базе данных
+        Optional<File> fileRecordOptional = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername());
 
-    public void deleteFile(String username, String filename) {
-        try {
-            // Удаляем файл из MinIO
-            boolean deleted = minioService.deleteFile(filename);
-            if (!deleted) {
-                throw new GeneralServiceException("Не удалось удалить файл из MinIO: " + filename);
-            }
+        if (fileRecordOptional.isPresent()) {
+            File fileRecord = fileRecordOptional.get();
 
             // Удаляем запись из таблицы File
-            Optional<File> fileRecordOptional = fileRepository.findByFilenameAndOwner_Username(filename, username);
-            fileRecordOptional.ifPresentOrElse(
-                    fileRecord -> fileRepository.delete(fileRecord),
-                    () -> {
-                        throw new RuntimeException("Файл с именем " + filename + " не найден для пользователя " + username + " .");
-                    }
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка при удалении файла: " + e.getMessage(), e);
+            fileRepository.delete(fileRecord);
+
+            try {
+                // Удаляем файл из MinIO
+                boolean deleted = minioService.deleteFile(filename);
+                if (!deleted) {
+                    // Если удаление не удалось, восстанавливаем запись в базе данных
+                    fileRepository.save(fileRecord);
+                    log.error("Не удалось удалить файл {} из MinIO. Запись восстановлена в базе данных.", filename);
+                    throw new GeneralServiceException("Не удалось удалить файл из MinIO: " + filename);
+                }
+            } catch (Exception e) {
+                // Если возникла ошибка при удалении файла, восстанавливаем запись в базе данных
+                fileRepository.save(fileRecord);
+                log.error("Ошибка при удалении файла {}. Запись восстановлена в базе данных.", filename, e);
+                throw new RuntimeException("Ошибка при удалении файла: " + e.getMessage(), e);
+            }
+        } else {
+            log.error("Файл с именем {} не найден для пользователя {}.", filename, user.getUsername());
+            throw new RuntimeException("Файл с именем " + filename + " не найден для пользователя " + user.getUsername() + ".");
         }
     }
 
 
-    public List<FileDTO> listFiles(String username, int limit) {
+    public List<File> listFiles(User user, int limit) {
         if (limit <= 0) {
+            log.error("Лимит для списка файлов должен быть > 0");
             throw new InvalidInputException("Лимит для списка файлов должен быть > 0");
         }
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь: " + username +" не найден."));
-
 
         try {
             Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "id"));
@@ -146,39 +168,35 @@ public class FileService {
             Page<File> filePage = fileRepository.findByOwner_Id(user.getId(), pageable);
             List<File> files = filePage.getContent();
 
-            return files.stream()
-                    .map(file -> {
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                        String formattedDate = file.getDateOfUpload().format(formatter);
-                        return new FileDTO(file.getFilename(), (int) file.getSize(), formattedDate);
-                    })
-                    .toList();
+            return files;
         } catch (InvalidInputException | FilesNotFoundException e) {
             throw e;
         } catch (Exception e) {
+            log.error("Ошибка в получение списка файлов для пользователя {}" , user.getUsername());
             throw new GeneralServiceException("Ошибка в получение списка файлов для пользователя " + user.getUsername(), e);
         }
     }
 
-    public void editFileName(String username, String filename, String newFileName) {
+    @Transactional
+    public void editFileName(User user, String filename, String newFileName) {
+        if (newFileName == null || newFileName.trim().isEmpty()) {
+            log.error("Имя файла пустое!");
+            throw new InvalidInputException("Имя файла пустое!");
+        }
+
+        File file = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername())
+                .orElseThrow(() -> new FilesNotFoundException(
+                        "Файл с именем " + filename + " не найден для пользователя " + user.getUsername() + ".")
+                );
+
+        // Проверяем, существует ли файл с таким именем
+        Optional<File> existingFile = fileRepository.findByFilenameAndOwner_Username(newFileName, user.getUsername());
+        if (existingFile.isPresent()) {
+            log.error("Файл с таким именем уже существует!");
+            throw new InvalidInputException("Файл с таким именем уже существует!");
+        }
+
         try {
-            if (newFileName == null || newFileName.trim().isEmpty()) {
-                throw new InvalidInputException("Имя файла пустое!");
-            }
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найлен: " + username));
-
-            File file = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername() )
-                    .orElseThrow(() -> new FilesNotFoundException(
-                            "Файл с именем " + filename + " не найден для пользователя " + username + " .")
-                    );
-
-            // Проверяем, существует ли файл с таким именем
-            Optional<File> existingFile = fileRepository.findByFilenameAndOwner_Username(newFileName, user.getUsername());
-            if (existingFile.isPresent()) {
-                throw new InvalidInputException("Файл с таким именем уже существует!");
-            }
-
             // Переименование файла в MinIO
             minioService.renameFile(filename, newFileName);
 
@@ -186,17 +204,15 @@ public class FileService {
             file.setFilename(newFileName);
             file.setFilePath(bucketName + "/" + newFileName);
             fileRepository.save(file);
-
-        } catch (FilesNotFoundException | InvalidInputException e) {
-            throw e;
         } catch (Exception e) {
+            // При возникновении ошибки откат транзакции
+            log.error("Ошибка при изменении имени файла {}: {}", newFileName, e.getMessage());
             throw new GeneralServiceException("Ошибка при изменении имени файла", e);
         }
     }
 
-    public byte[] downloadFile(String username, String filename) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
+
+    public byte[] downloadFile(User user, String filename) {
 
         File file = fileRepository.findByFilenameAndOwner_Username(filename, user.getUsername())
                 .orElseThrow(() -> new FilesNotFoundException("Файл не найден: " + filename));

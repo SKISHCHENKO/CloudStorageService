@@ -1,19 +1,21 @@
 package com.diplom.controller;
 
-
 import com.diplom.exception.ErrorResponse;
-import com.diplom.exception.GeneralServiceException;
 import com.diplom.model.File;
+import com.diplom.model.User;
 import com.diplom.model.dto.FileDTO;
+import com.diplom.repository.UserRepository;
 import com.diplom.service.FileService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -23,17 +25,17 @@ public class FileController {
 
 
     private final FileService fileService;
+    private final UserRepository userRepository;
 
     /**
-     *  Загрузка файла
+     *  Загрузка файла в файловое хранилище
      */
     @PostMapping("/file")
     public ResponseEntity<Void> uploadFile(
             @RequestHeader(value = "auth-token", required = true) String authToken,
             @RequestPart("file") MultipartFile file) {
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        fileService.uploadFile(username, file);
+        fileService.uploadFile(loadUser(), file);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -46,12 +48,28 @@ public class FileController {
             @RequestHeader(value = "auth-token", required = true) String authToken,
             @RequestParam(value = "limit", defaultValue = "10", required = false) int limit) {
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<FileDTO> files = fileService.listFiles(username, limit);
+        try {
+            List<File> files = fileService.listFiles(loadUser(), limit);
 
-        return new ResponseEntity<>(files, HttpStatus.OK);
+            if (files.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            // Преобразование файлов в DTO
+            List<FileDTO> fileDTO = files.stream()
+                    .map(file -> {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                        String formattedDate = file.getDateOfUpload().format(formatter);
+                        return new FileDTO(file.getFilename(), (int) file.getSize(), formattedDate);
+                    })
+                    .toList();
+
+            // Возврат 200 OK с данными
+            return new ResponseEntity<>(fileDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-
     /**
      *  Удаление файла
      */
@@ -60,9 +78,7 @@ public class FileController {
             @RequestHeader(value = "auth-token", required = true) String authToken,
             @RequestParam("filename") String filename) {
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        fileService.deleteFile(username, filename);
+        fileService.deleteFile(loadUser(), filename);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -81,23 +97,20 @@ public class FileController {
         }
 
         String newFileName = requestBody.get("filename");
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        fileService.editFileName(username, filename, newFileName);
 
+        fileService.editFileName(loadUser(), filename, newFileName);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /**
-     *  Загрузка файла
+     *  Скачивание файла из файлового хранилища
      */
     @GetMapping("/file")
     public ResponseEntity<byte[]> downloadFile(
             @RequestHeader(value = "auth-token", required = true) String authToken,
             @RequestParam("filename") String filename) {
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        byte[] fileBytes = fileService.downloadFile(username, filename);
+        byte[] fileBytes = fileService.downloadFile(loadUser(), filename);
 
         // Кодируем имя файла в UTF-8 (по RFC 5987)
         String encodedFileName = URLEncoder.encode(filename, StandardCharsets.UTF_8)
@@ -112,5 +125,12 @@ public class FileController {
 
          return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
     }
-
+    /**
+     *  Вспомогательный метод для нахождения текущего авторизованного пользователя.
+     */
+    public User loadUser(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
 }

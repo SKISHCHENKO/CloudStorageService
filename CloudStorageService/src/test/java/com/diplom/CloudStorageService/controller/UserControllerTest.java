@@ -34,9 +34,9 @@ public class UserControllerTest {
         user.setEmail("testuser@example.com");
 
         User newUser  = new User(); // Создаем объект User
-        newUser .setUsername("testuser");
-        newUser .setPassword("password123");
-        newUser .setEmail("testuser@example.com");
+        newUser.setUsername("testuser");
+        newUser.setPassword("password123");
+        newUser.setEmail("testuser@example.com");
 
         Mockito.when(userService.createUser (user)).thenReturn(newUser);
 
@@ -65,5 +65,5 @@ public class UserControllerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Пользователь уже существует", response.getBody());
     }
-    
+
 }

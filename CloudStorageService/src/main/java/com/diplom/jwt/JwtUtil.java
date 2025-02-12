@@ -4,6 +4,7 @@ import com.diplom.model.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.*;
 
-
+@Slf4j
 @Component
 public class JwtUtil {
 
@@ -43,7 +44,7 @@ public class JwtUtil {
                     .getBody()
                     .getSubject();  // Получаем email
         } catch (JwtException e) {
-            System.out.println("Ошибка при извлечении email из токена");
+            log.error("Ошибка при извлечении email из токена");
             throw new IllegalArgumentException("Invalid token structure", e);
         }
     }
@@ -66,11 +67,11 @@ public class JwtUtil {
                     .setSigningKey(secretKey)  // Устанавливаем ключ для проверки подписи
                     .build()
                     .parseClaimsJws(token);
-            System.out.println("✅ Token is valid!");
+            log.info("✅ Token is valid!");
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             // В случае ошибки токен недействителен
-            System.out.println("❌ Token validation failed: " + e.getMessage());
+            log.error("❌ Token validation failed");
             return false;
         }
     }

@@ -3,7 +3,6 @@ package com.diplom.CloudStorageService.service;
 import com.diplom.exception.InvalidInputException;
 import com.diplom.model.File;
 import com.diplom.model.User;
-import com.diplom.model.dto.FileDTO;
 import com.diplom.repository.FileRepository;
 import com.diplom.repository.UserRepository;
 import com.diplom.service.FileService;
@@ -23,13 +22,16 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class FileServiceTest {
+
+    private User user;
+    private MultipartFile testFile;
+    private String testUsername = "testUser";
 
     @Mock
     private FileRepository fileRepository;
@@ -43,13 +45,16 @@ public class FileServiceTest {
     @InjectMocks
     private FileService fileService;
 
-    private String testUsername;
-    private MultipartFile testFile;
+
 
     @BeforeEach
     void setUp() {
-        testUsername = "testUser ";
         testFile = new MockMultipartFile("file", "testFile.txt", "text/plain", "Test content".getBytes());
+
+        user = new User(); // Создаем объект User
+        user.setUsername("testUser");
+        user.setPassword("password123");
+        user.setEmail("testuser@example.com");
     }
 
     @Test
@@ -66,12 +71,11 @@ public class FileServiceTest {
         testFileEntity.setOwner(user);
 
         // Настраиваем моки
-        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(user));
         doNothing().when(minioService).saveFile(testFile); // Мок для метода saveFile
         when(fileRepository.save(any(File.class))).thenReturn(testFileEntity); // Мок для сохранения файла
 
         // Выполняем метод uploadFile и проверяем, что он не выбрасывает исключения
-        assertDoesNotThrow(() -> fileService.uploadFile(testUsername, testFile));
+        assertDoesNotThrow(() -> fileService.uploadFile(user, testFile));
 
         // Проверяем, что метод save был вызван один раз с правильными параметрами
         verify(fileRepository, times(1)).save(argThat(file ->
@@ -100,11 +104,10 @@ public class FileServiceTest {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "id"));
 
         // Настраиваем моки
-        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(user));
         when(fileRepository.findByOwner_Id(user.getId(), pageable)).thenReturn(new PageImpl<>(files, pageable, files.size()));
 
         // Вызываем метод listFiles
-        List<FileDTO> result = fileService.listFiles(testUsername, limit);
+        List<File> result = fileService.listFiles(user, limit);
 
         // Проверяем результаты
         assertNotNull(result);
@@ -121,7 +124,7 @@ public class FileServiceTest {
 
         // Проверяем, что при вызове метода listFiles с некорректным лимитом будет выброшено исключение
         InvalidInputException exception = assertThrows(InvalidInputException.class, () -> {
-            fileService.listFiles(testUsername, invalidLimit);
+            fileService.listFiles(user, invalidLimit);
         });
 
         // Проверяем сообщение исключения

@@ -71,7 +71,7 @@ public class FileServiceTest {
         testFileEntity.setOwner(user);
 
         // Настраиваем моки
-        doNothing().when(minioService).saveFile(testFile); // Мок для метода saveFile
+        when(minioService.saveFile(testFile)).thenReturn(true); // Мок для метода saveFile
         when(fileRepository.save(any(File.class))).thenReturn(testFileEntity); // Мок для сохранения файла
 
         // Выполняем метод uploadFile и проверяем, что он не выбрасывает исключения
@@ -82,7 +82,7 @@ public class FileServiceTest {
                 file.getFilename().equals(testFile.getOriginalFilename()) &&
                         file.getOwner().equals(user)
         ));
-    }
+    }пш
 
 
 

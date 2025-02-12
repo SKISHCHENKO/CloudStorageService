@@ -12,9 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +28,7 @@ public class FileController {
     private final UserRepository userRepository;
 
     /**
-     *  Загрузка файла в файловое хранилище
+     * Загрузка файла в файловое хранилище
      */
     @PostMapping("/file")
     public ResponseEntity<Void> uploadFile(
@@ -41,7 +41,7 @@ public class FileController {
     }
 
     /**
-     *  Получение списка файлов у авторизованного пользователя
+     * Получение списка файлов у авторизованного пользователя
      */
     @GetMapping("/list")
     public ResponseEntity<List<FileDTO>> listFiles(
@@ -70,8 +70,9 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     /**
-     *  Удаление файла
+     * Удаление файла
      */
     @DeleteMapping("/file")
     public ResponseEntity<Void> deleteFile(
@@ -83,7 +84,7 @@ public class FileController {
     }
 
     /**
-     *  Редактирование имени файла - на фронтенде - новое имя файла задается случайным образом
+     * Редактирование имени файла - на фронтенде - новое имя файла задается случайным образом
      */
     @PutMapping("/file")
     public ResponseEntity<?> editFileName(
@@ -103,7 +104,7 @@ public class FileController {
     }
 
     /**
-     *  Скачивание файла из файлового хранилища
+     * Скачивание файла из файлового хранилища
      */
     @GetMapping("/file")
     public ResponseEntity<byte[]> downloadFile(
@@ -116,19 +117,20 @@ public class FileController {
         String encodedFileName = URLEncoder.encode(filename, StandardCharsets.UTF_8)
                 .replace("+", "%20");
 
-            // Определяем заголовки ответа
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDisposition(ContentDisposition.attachment()
-                    .filename("*=UTF-8''" + encodedFileName, StandardCharsets.UTF_8)
-                    .build());
+        // Определяем заголовки ответа
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename("*=UTF-8''" + encodedFileName, StandardCharsets.UTF_8)
+                .build());
 
-         return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+        return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
     }
+
     /**
-     *  Вспомогательный метод для нахождения текущего авторизованного пользователя.
+     * Вспомогательный метод для нахождения текущего авторизованного пользователя.
      */
-    public User loadUser(){
+    public User loadUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));

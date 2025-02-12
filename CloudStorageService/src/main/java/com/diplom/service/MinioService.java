@@ -46,6 +46,7 @@ public class MinioService {
             log.error("Error while creating MinIO bucket: {}", e.getMessage(), e);
         }
     }
+
     public boolean deleteFile(String filename) {
         try {
             minioClient.removeObject(
@@ -110,6 +111,7 @@ public class MinioService {
             }
         }
     }
+
     public void renameFile(String oldFilename, String newFilename) {
         try {
             // Копирование файла с новым именем
@@ -132,6 +134,7 @@ public class MinioService {
             throw new GeneralServiceException("Ошибка при переименовании файла в MinIO", e);
         }
     }
+
     public byte[] getFile(String filename) {
         try (InputStream stream = minioClient.getObject(
                 GetObjectArgs.builder()

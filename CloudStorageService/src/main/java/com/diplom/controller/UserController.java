@@ -5,10 +5,10 @@ import com.diplom.model.dto.UserDTO;
 import com.diplom.request.UserRequest;
 import com.diplom.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -18,19 +18,20 @@ public class UserController {
     private final UserService userService;
 
     /**
-     *  Создание нового пользователя
+     * Создание нового пользователя
      */
     @PostMapping()
     public ResponseEntity<String> addUser(@RequestBody UserRequest userRequest) {
         try {
             User newUser = userService.createUser(userRequest);
-            return ResponseEntity.ok("Новый пользователь "+ newUser.getUsername()+ " создан.");
+            return ResponseEntity.ok("Новый пользователь " + newUser.getUsername() + " создан.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
     /**
-     *  Получение информации о текущем пользователе
+     * Получение информации о текущем пользователе
      */
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser(Authentication auth) {
@@ -40,7 +41,7 @@ public class UserController {
     }
 
     /**
-     *  Редактирования данных профиля текущего пользователя
+     * Редактирования данных профиля текущего пользователя
      */
     @PatchMapping("/me")
     public ResponseEntity<String> updateUserProfile(Authentication auth, @RequestBody UserRequest userRequest) {
@@ -54,7 +55,7 @@ public class UserController {
     }
 
     /**
-     *  Удаление пользователя
+     * Удаление пользователя
      */
     @DeleteMapping("/me")
     public ResponseEntity<String> deleteUser(Authentication auth) {
@@ -66,6 +67,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при удаление пользователя: " + e.getMessage());
         }
     }
+
     // ковертация в UserDTO
     private UserDTO convertToUserDto(User user) {
         return new UserDTO(user.getUsername(), user.getEmail(), user.getRole().name());

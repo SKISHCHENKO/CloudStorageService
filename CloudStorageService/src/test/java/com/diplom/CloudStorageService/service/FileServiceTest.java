@@ -14,11 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +33,7 @@ public class FileServiceTest {
 
     private User user;
     private MultipartFile testFile;
-    private String testUsername = "testUser";
+    private final String testUsername = "testUser";
 
     @Mock
     private FileRepository fileRepository;
@@ -46,7 +48,6 @@ public class FileServiceTest {
     private FileService fileService;
 
 
-
     @BeforeEach
     void setUp() {
         testFile = new MockMultipartFile("file", "testFile.txt", "text/plain", "Test content".getBytes());
@@ -59,7 +60,7 @@ public class FileServiceTest {
 
     @Test
     @DisplayName("Should upload file successfully")
-    void shouldUploadFileSuccessfully() throws IOException {
+    void shouldUploadFileSuccessfully() {
         // Создаем пользователя
         User user = new User();
         user.setUsername(testUsername);
@@ -82,9 +83,7 @@ public class FileServiceTest {
                 file.getFilename().equals(testFile.getOriginalFilename()) &&
                         file.getOwner().equals(user)
         ));
-    }пш
-
-
+    }
 
 
     @Test
@@ -112,7 +111,7 @@ public class FileServiceTest {
         // Проверяем результаты
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("testFile.txt", result.get(0).getFilename());
+        assertEquals("testFile.txt", result.getFirst().getFilename());
     }
 
 
@@ -123,9 +122,7 @@ public class FileServiceTest {
         int invalidLimit = -1;
 
         // Проверяем, что при вызове метода listFiles с некорректным лимитом будет выброшено исключение
-        InvalidInputException exception = assertThrows(InvalidInputException.class, () -> {
-            fileService.listFiles(user, invalidLimit);
-        });
+        InvalidInputException exception = assertThrows(InvalidInputException.class, () -> fileService.listFiles(user, invalidLimit));
 
         // Проверяем сообщение исключения
         assertEquals("Лимит для списка файлов должен быть > 0", exception.getMessage());

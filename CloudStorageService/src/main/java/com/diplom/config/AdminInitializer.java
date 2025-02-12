@@ -30,8 +30,7 @@ public class AdminInitializer {
                         .build();
                 userRepository.save(admin);
                 log.info("Admin user created!");
-            }
-            else{
+            } else {
                 log.info("Admin user already exists!");
             }
         };

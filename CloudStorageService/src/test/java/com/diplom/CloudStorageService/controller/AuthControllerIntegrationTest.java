@@ -5,7 +5,10 @@ import com.diplom.controller.UserController;
 import com.diplom.request.AuthenticationRequest;
 import com.diplom.request.AuthenticationResponse;
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -87,7 +90,7 @@ public class AuthControllerIntegrationTest {
         assertNotNull(response.getBody());
 
         // Проверяем, что тело ответа является экземпляром Map
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> errorResponse = (Map<String, Object>) response.getBody();
 
         // Проверяем, что код ошибки и сообщение соответствуют ожиданиям

@@ -48,9 +48,9 @@ public class UserServiceTest {
         when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(user.getPassword())).thenReturn("encodedPassword");
 
-        userService.createUser (user);
+        userService.createUser(user);
 
-       // Проверяем, что метод save был вызван
+        // Проверяем, что метод save был вызван
         verify(userRepository, times(1)).save(any(User.class));
 
         // Проверяем, что пароль был закодирован
@@ -64,15 +64,15 @@ public class UserServiceTest {
     @DisplayName("Should throw IllegalArgumentException when user with the same username already exists")
     void shouldThrowExceptionWhenUserAlreadyExists() {
         // Подготовка данных для теста
-        User existingUser  = new User();
-        existingUser .setUsername(user.getUsername());
+        User existingUser = new User();
+        existingUser.setUsername(user.getUsername());
 
         // Настройка мока для userRepository, чтобы вернуть существующего пользователя
-        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(existingUser ));
+        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(existingUser));
 
         // Проверка, что при попытке создать пользователя выбрасывается ожидаемое исключение
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            userService.createUser (user);
+            userService.createUser(user);
         });
 
         // Проверка, что сообщение исключения соответствует ожидаемому
@@ -81,7 +81,7 @@ public class UserServiceTest {
 
     @Test
     @DisplayName("Should delete user successfully")
-    void testDeleteUser () {
+    void testDeleteUser() {
         // Создаем пользователя с id 1L
         User user = new User();
         user.setId(1L);
@@ -93,7 +93,7 @@ public class UserServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         // Удаляем пользователя
-        userService.deleteUser (user.getId());
+        userService.deleteUser(user.getId());
 
         // Проверяем, что метод deleteById был вызван один раз
         verify(userRepository, times(1)).deleteById(user.getId());

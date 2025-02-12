@@ -1,20 +1,20 @@
 package com.diplom.controller;
 
 import com.diplom.jwt.JwtUtil;
+import com.diplom.model.User;
 import com.diplom.repository.UserRepository;
 import com.diplom.request.AuthenticationRequest;
 import com.diplom.request.AuthenticationResponse;
-import com.diplom.model.User;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.authentication.AuthenticationManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class AuthController {
     private final UserRepository userRepository;
 
     /**
-    *  Авторизация по почте и паролю
+     * Авторизация по почте и паролю
      */
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) {
@@ -39,7 +39,7 @@ public class AuthController {
             return createErrorResponse(authenticationRequest);
         }
         User user = optionalUser.get();
-           try{
+        try {
             // Аутентификация пользователя
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -54,13 +54,14 @@ public class AuthController {
             return ResponseEntity.ok()
                     .header("auth-token", token)
                     .body(new AuthenticationResponse(token));
-           } catch (AuthenticationException e) {
-               return createErrorResponse(authenticationRequest);
-           }
-
+        } catch (AuthenticationException e) {
+            return createErrorResponse(authenticationRequest);
         }
+
+    }
+
     /**
-     *  Сброс авторизации и выход
+     * Сброс авторизации и выход
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader(value = "auth-token", required = true) String authToken) {

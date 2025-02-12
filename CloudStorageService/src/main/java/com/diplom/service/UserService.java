@@ -1,6 +1,7 @@
 package com.diplom.service;
 
 import com.diplom.exception.UserNotFoundException;
+import com.diplom.model.Role;
 import com.diplom.model.User;
 import com.diplom.repository.UserRepository;
 import com.diplom.request.UserRequest;
@@ -9,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.diplom.model.Role;
+
 import java.util.Optional;
 
 @Slf4j
@@ -19,7 +20,6 @@ public class UserService {
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
-
 
 
     public User save(User user) {
@@ -71,7 +71,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser (Long userId) {
+    public void deleteUser(Long userId) {
         Optional<User> user = repository.findById(userId);
         if (user.isPresent()) {
             repository.deleteById(userId);

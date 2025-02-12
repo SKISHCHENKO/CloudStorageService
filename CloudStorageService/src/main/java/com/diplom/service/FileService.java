@@ -7,8 +7,10 @@ import com.diplom.model.File;
 import com.diplom.model.User;
 import com.diplom.repository.FileRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -17,22 +19,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class FileService {
 
 
-    private int pageNumber = 0;
+    private final int pageNumber = 0;
     private final FileRepository fileRepository;
     private final String bucketName;
     private final MinioService minioService;
 
     @Autowired
-    public FileService(FileRepository fileRepository,@Value("${minio.bucket-name}") String bucketName,
+    public FileService(FileRepository fileRepository, @Value("${minio.bucket-name}") String bucketName,
                        MinioService minioService) {
         this.fileRepository = fileRepository;
         this.bucketName = bucketName;
@@ -40,7 +39,7 @@ public class FileService {
     }
 
     /**
-     *  Загрузка файла в файловое хранилище
+     * Загрузка файла в файловое хранилище
      */
     @Transactional
     public void uploadFile(User user, MultipartFile file) {
@@ -63,7 +62,7 @@ public class FileService {
             // Сохраняем файл в MinIO
             boolean saveFile = minioService.saveFile(file);
 
-            if(saveFile) {
+            if (saveFile) {
                 // Создаем запись в таблице File
                 File fileRecord = File.builder()
                         .filename(filename)
@@ -118,7 +117,7 @@ public class FileService {
             fileRepository.save(updatedFile);
 
         } catch (Exception e) {
-            log.error("Ошибка при замене файла {}" , filename);
+            log.error("Ошибка при замене файла {}", filename);
             throw new GeneralServiceException("Ошибка при замене файла: " + filename, e);
         }
     }
@@ -172,7 +171,7 @@ public class FileService {
         } catch (InvalidInputException | FilesNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Ошибка в получение списка файлов для пользователя {}" , user.getUsername());
+            log.error("Ошибка в получение списка файлов для пользователя {}", user.getUsername());
             throw new GeneralServiceException("Ошибка в получение списка файлов для пользователя " + user.getUsername(), e);
         }
     }

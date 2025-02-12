@@ -1,7 +1,6 @@
 package com.diplom.config;
 
 
-
 import com.diplom.jwt.JwtFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
